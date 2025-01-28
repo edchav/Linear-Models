@@ -1,8 +1,12 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+
 np.random.seed(42)
 
-class LinearRegression:
+class CustomLinearRegression:
     def __init__(self, batch_size=32, regularization=0, max_epochs=100, patience=3, learning_rate=0.01):
         """Linear Regression using Gradient Descent.
         
@@ -112,8 +116,8 @@ class LinearRegression:
                     print(f"Early stopping at epoch {epoch+1}")
                     break
 
-            train_loss = self._mse_loss(self.predict(X_train), y_train)
-            print(f"Epoch {epoch+1}/{self.max_epochs} - Training Loss: {train_loss:.4f}")
+            # train_loss = self._mse_loss(self.predict(X_train), y_train)
+            # print(f"Epoch {epoch+1}/{self.max_epochs} - Training Loss: {train_loss:.4f}")
     
         if best_weights is not None:
             self.weights = best_weights
@@ -151,7 +155,7 @@ class LinearRegression:
         y_true: numpy.ndarray
             The true values.
         """
-        mse = np.mean((y_pred - y_true) ** 2)
+        mse = 0.5 * np.mean((y_pred - y_true) ** 2) #np.mean((y_pred - y_true) **2)
         reg_loss = 0.5 * self.regularization * np.sum(self.weights ** 2)
         return mse + reg_loss
 
@@ -179,19 +183,52 @@ class LinearRegression:
         """
 
         # TODO: Implement the score function.
+        #predictions = self.predict(X)
+        #return self._mse_loss(predictions, y)
+        
         predictions = self.predict(X)
-        return self._mse_loss(predictions, y)
+        mse = np.mean((predictions - y) ** 2)
+        return mse
+    
+# Generate synthetic data with a known linear relationship
+np.random.seed(42)
+n_samples = 200
+X = np.random.randn(n_samples, 3)  # three features
+true_weights = np.array([3.0, -2.0, 1.5])
+true_bias = 4.0
+noise = np.random.randn(n_samples) * 0.5
+y = X.dot(true_weights) + true_bias + noise
 
-# Generate some random data, row is a sample, column is a feature
-X = np.random.rand(100, 3)
-y = np.random.rand(100)
 
-model = LinearRegression()
+model = CustomLinearRegression()
 model.fit(X, y)
 
 # Evaluate the model
 mse = model.score(X, y)
 
-print(f"Mean Squared Error:", mse)
-print(f"Weights:", model.weights)
-print(f"Bias:", model.bias)
+print(f"Custom Model Mean Squared Error:", mse)
+print(f"Custom Model Weights:", model.weights)
+print(f"Custom Model Bias:", model.bias)
+
+# Save the model
+# model.save("model.npz")
+
+# # Load the model
+# model2 = CustomLinearRegression()
+# model2.load("model.npz")
+
+# # Evaluate the loaded model
+# mse = model2.score(X, y)
+
+# print(f"Mean Squared Error:", mse)
+
+
+# Compare with sklearn
+sklearn_model = LinearRegression()
+sklearn_model.fit(X, y)
+sklearn_predictions = sklearn_model.predict(X)
+sklearn_mse = mean_squared_error(y, sklearn_predictions)
+
+print(f"Sklearn Mean Squared Error:", sklearn_mse)
+print(f"Sklearn Weights:", sklearn_model.coef_)
+print(f"Sklearn Bias:", sklearn_model.intercept_)
