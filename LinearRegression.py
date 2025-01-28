@@ -62,13 +62,17 @@ class LinearRegression:
         self.weights = np.random.rand(n_features)
         self.bias = np.random.rand()
 
+        best_val_loss = np.inf
+        patience_counter = 0
+        best_weights = None
+        best_bias = None
+
         # TODO: Implement the training loop.
         for epoch in range(self.max_epochs):
             # Shuffle the data at the beginning of each epoch to avoid local minima 
-            indices = np.arange(X_train.shape[0])
-            np.random.shuffle(indices)
-            X_train = X_train[indices]
-            y_train = y_train[indices]
+            shuffled_idx = np.random.permutation(X_train.shape[0])
+            X_train = X_train[shuffled_idx]
+            y_train = y_train[shuffled_idx]
 
             # Loop through the data in batches
             for start_idx in range(0, X_train.shape[0], self.batch_size):
@@ -91,9 +95,51 @@ class LinearRegression:
                 # Update the weights and bias
                 self.weights = self.weights - self.learning_rate * grad_w
                 self.bias = self.bias - self.learning_rate * grad_b
+            
+           
+            val_pred = self.predict(X_val)
+            val_loss = self._mse_loss(val_pred, y_val)
+
+            # Early Stopping
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_weights = self.weights.copy()
+                best_bias = self.bias.copy()
+                patience_counter = 0
+            else:
+                patience_counter += 1
+                if patience_counter >= self.patience:
+                    print(f"Early stopping at epoch {epoch+1}")
+                    break
 
             train_loss = self._mse_loss(self.predict(X_train), y_train)
-            print(f"Epoch {epoch+1}/{self.max_epochs} - Training Loss: {train_loss}:.4f")
+            print(f"Epoch {epoch+1}/{self.max_epochs} - Training Loss: {train_loss:.4f}")
+    
+        if best_weights is not None:
+            self.weights = best_weights
+            self.bias = best_bias
+
+    def save(self, file_path):
+        """Save model parameters and relevant hyperparameters."""
+        np.savez(
+            file_path,
+            weights=self.weights,
+            bias=self.bias,
+            batch_size=self.batch_size,
+            regularization=self.regularization,
+            max_epochs=self.max_epochs,
+            patience=self.patience
+        )
+
+    def load(self, file_path):
+        """Load model parameters and hyperparameters."""
+        data = np.load(file_path)
+        self.weights = data["weights"]
+        self.bias = data["bias"].item()
+        self.batch_size = int(data["batch_size"].item())
+        self.regularization = float(data["regularization"].item())
+        self.max_epochs = int(data["max_epochs"].item())
+        self.patience = int(data["patience"].item())
 
     def _mse_loss(self, y_pred, y_true):
         """Compute the mean squared error loss (MSE).
@@ -105,7 +151,9 @@ class LinearRegression:
         y_true: numpy.ndarray
             The true values.
         """
-        return np.mean((y_pred - y_true) ** 2)
+        mse = np.mean((y_pred - y_true) ** 2)
+        reg_loss = 0.5 * self.regularization * np.sum(self.weights ** 2)
+        return mse + reg_loss
 
     def predict(self, X):
         """Predict using the linear model.
@@ -134,6 +182,7 @@ class LinearRegression:
         predictions = self.predict(X)
         return self._mse_loss(predictions, y)
 
+# Generate some random data, row is a sample, column is a feature
 X = np.random.rand(100, 3)
 y = np.random.rand(100)
 
