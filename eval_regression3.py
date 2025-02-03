@@ -4,13 +4,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 from LinearRegression import LinearRegression
 
-X_test = np.load('iris_test.npy')
+def main():
+    # Load the test data
+    X_test = np.load(r'Data\iris_x_test.npy')
 
-X_test_model = X_test[:, [0]]
-y_test_model = X_test[:, 1] 
+    # Uses the sepal length as features
+    # to predict the sepal width
+    X_test_model = X_test[:, [0]]
+    y_test_model = X_test[:, 1] 
 
-model = LinearRegression()
-model.load('model3.npz')
+    # Load the model
+    model = LinearRegression()
+    model.load(r'Models\linear_model3.npz')
 
-mse = model.score(X_test_model, y_test_model)
-print('Test Mean Squared Error:', mse)
+    print("Weights: ", model.weights)
+    print("Bias: ", model.bias)
+
+    # Test Mean Squared Error
+    mse = model.score(X_test_model, y_test_model)
+    print('Test Mean Squared Error:', mse)
+
+if __name__ == "__main__":
+    main()

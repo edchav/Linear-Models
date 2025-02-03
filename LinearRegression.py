@@ -1,9 +1,6 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from sklearn.linear_model import LinearRegression as SklearnLinearRegression
-from sklearn.metrics import mean_squared_error
-
 np.random.seed(42)
 
 class LinearRegression:
@@ -58,6 +55,8 @@ class LinearRegression:
         if learning_rate is not None:
             self.learning_rate = learning_rate
             
+        y = y.reshape(-1, 1) if len(y.shape) == 1 else y
+                
         # Split into train and validation (10% for validation) for early stopping
         X_train, X_val, y_train, y_val = train_test_split(
             X, 
@@ -69,8 +68,10 @@ class LinearRegression:
 
         # TODO: Initialize the weights and bias based on the shape of x and y.
         n_features = X_train.shape[1]
-        self.weights = np.random.rand(n_features)
-        self.bias = np.random.rand()
+        n_outputs = y_train.shape[1]
+
+        self.weights = np.random.randn(n_features, n_outputs)
+        self.bias = np.random.randn(n_outputs)
 
         best_val_loss = np.inf
         patience_counter = 0
@@ -92,27 +93,25 @@ class LinearRegression:
 
                 # Forward pass
                 # h(x;w) = w^T * x + b = w_1 * x_1 + w_2 * x_2 + ... + w_n * x_n + b
-                y_pred = self.predict(X_batch)
-
-                # Compute the loss
-                errors = (y_pred - y_batch)
+                y_pred = np.dot(X_batch, self.weights) + self.bias
+                errors = y_pred - y_batch
 
                 # batch loss
-                batch_loss = np.mean(errors ** 2)
+                batch_loss = self._mse_loss(y_pred, y_batch)  #np.mean(errors ** 2)
                 self.training_loss.append(batch_loss)
 
                 # Compute the gradients for the weights and bias
                 # dl/dw = X^T * (h(x;w) - y) / N + regularization * w
                 # dl/db = mean(h(x;w) - y)
                 grad_w = (2 * np.dot(X_batch.T, errors) / X_batch.shape[0]) + (2 * self.regularization * self.weights)
-                grad_b = 2 * np.mean(errors)
+                grad_b = 2 * np.mean(errors, axis = 0)
 
                 # Update the weights and bias
                 self.weights = self.weights - self.learning_rate * grad_w
                 self.bias = self.bias - self.learning_rate * grad_b
             
            
-                val_pred = self.predict(X_val)
+                val_pred = np.dot(X_val, self.weights) + self.bias
                 val_loss = self._mse_loss(val_pred, y_val)
 
                 # Early Stopping
@@ -125,14 +124,15 @@ class LinearRegression:
                     patience_counter += 1
                     if patience_counter >= self.patience:
                         print(f"Early stopping at step {step} of epoch {epoch}")
-                        self.weights, self.bias = best_weights, best_bias
+                        print(f"Epoch {epoch+1}/{self.max_epochs} - Val Loss: {best_val_loss:.4f}")
+                        self.weights, self.bias = best_weights.squeeze(), best_bias.squeeze()
                         return
 
-            print(f"Epoch {epoch+1}/{self.max_epochs} - Val Loss: {best_val_loss:.4f}")
+            print(f"Epoch {epoch}, Training Loss: {batch_loss}, Validation Loss: {val_loss}")
     
         if best_weights is not None:
-            self.weights = best_weights
-            self.bias = best_bias
+            self.weights = best_weights.squeeze()
+            self.bias = best_bias.squeeze()
 
     def save(self, file_path):
         """Save model parameters and relevant hyperparameters."""
@@ -144,7 +144,8 @@ class LinearRegression:
             regularization=self.regularization,
             max_epochs=self.max_epochs,
             patience=self.patience,
-            learning_rate=self.learning_rate
+            learning_rate=self.learning_rate,
+            training_loss=self.training_loss   
         )
 
     def load(self, file_path):
@@ -157,6 +158,7 @@ class LinearRegression:
         self.max_epochs = int(data["max_epochs"])
         self.patience = int(data["patience"])
         self.learning_rate = float(data["learning_rate"])
+        self.training_loss = data["training_loss"]
 
     def _mse_loss(self, y_pred, y_true):
         """Compute the mean squared error loss (MSE).
@@ -182,7 +184,8 @@ class LinearRegression:
         """
 
         # TODO: Implement the prediction funciton.
-        return np.dot(X, self.weights) + self.bias
+        pred = np.dot(X, self.weights) + self.bias
+        return pred.squeeze()
 
     def score(self, X, y):
         """Evaluate the linear model using the mean squared error.
@@ -202,41 +205,3 @@ class LinearRegression:
         predictions = self.predict(X)
         mse = np.mean((predictions - y) ** 2)
         return mse
-    
-# Generate synthetic data with a known linear relationship
-# np.random.seed(42)
-# n_samples = 200
-# X = np.random.randn(n_samples, 3)  # three features
-
-# true_weights = np.array([3.0, -2.0, 1.5])
-# true_bias = 4.0
-
-# noise = np.random.randn(n_samples) * 0.5
-# y = X.dot(true_weights) + true_bias + noise
-
-
-# model = LinearRegression(batch_size=32, regularization=0, max_epochs=1000, patience=5, learning_rate=0.01)
-# model.fit(X, y)
-
-# # Evaluate the model
-# mse = model.score(X, y)
-
-# print(f"Custom Model Mean Squared Error:", mse)
-# print(f"Custom Model Weights:", model.weights)
-# print(f"Custom Model Bias:", model.bias)
-
-
-
-
-# # Compare with sklearn
-# sklearn_model = SklearnLinearRegression()
-# sklearn_model.fit(X, y)
-# sklearn_predictions = sklearn_model.predict(X)
-# sklearn_mse = mean_squared_error(y, sklearn_predictions)
-
-# print(f"Sklearn Mean Squared Error:", sklearn_mse)
-# print(f"Sklearn Weights:", sklearn_model.coef_)
-# print(f"Sklearn Bias:", sklearn_model.intercept_)
-
-
-# print(f"Mean Squared Error:", mse)
