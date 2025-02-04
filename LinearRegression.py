@@ -18,6 +18,8 @@ class LinearRegression:
         patience: int
             The number of epochs to wait before stopping if the validation loss
             does not improve.
+        learning_rate: float
+            The learning rate for the gradient descent
         """
         self.batch_size = batch_size
         self.regularization = regularization
@@ -42,6 +44,8 @@ class LinearRegression:
         patience: int
             The number of epochs to wait before stopping if the validation loss
             does not improve.
+        learning_rate: float
+            The learning rate for the gradient descent
         """
 
         if batch_size is not None:
@@ -135,7 +139,14 @@ class LinearRegression:
             self.bias = best_bias.squeeze()
 
     def save(self, file_path):
-        """Save model parameters and relevant hyperparameters."""
+        """
+        Save model parameters and relevant hyperparameters.
+        
+        Parameters:
+        -----------
+        file_path: str
+            The file path to save the model parameters.
+        """
         np.savez(
             file_path,
             weights=self.weights,
@@ -149,7 +160,15 @@ class LinearRegression:
         )
 
     def load(self, file_path):
-        """Load model parameters and hyperparameters."""
+        """
+        Load model parameters and hyperparameters.
+        
+        Parameters:
+        -----------
+        file_path: str
+            The file path to load the model parameters.
+        """
+        
         data = np.load(file_path)
         self.weights = data["weights"]
         self.bias = data["bias"]
@@ -161,7 +180,8 @@ class LinearRegression:
         self.training_loss = data["training_loss"]
 
     def _mse_loss(self, y_pred, y_true):
-        """Compute the mean squared error loss (MSE).
+        """
+        Compute the mean squared error loss (MSE).
         
         Parameters:
         -----------
@@ -175,7 +195,8 @@ class LinearRegression:
         return mse + reg_loss
 
     def predict(self, X):
-        """Predict using the linear model.
+        """
+        Predict using the linear model.
         
         Parameters:
         ----------
@@ -188,7 +209,8 @@ class LinearRegression:
         return pred.squeeze()
 
     def score(self, X, y):
-        """Evaluate the linear model using the mean squared error.
+        """
+        Evaluate the linear model using the mean squared error.
         
         Parameters
         ----------
