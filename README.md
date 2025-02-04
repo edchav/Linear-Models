@@ -11,7 +11,7 @@ This repository contains custom implementations of linear models for regression 
 
 # Run the program
 1. To execute the full pipeline (data prep, training, evaluation of for all models) run the main_script.py
-2. Files can also be indivdually run in the following order that main_script is executes as well. 
+2. Files can also be indivdually run in the following order that main_script is executes as well. Since there are already prerun models in the 'Models' folder you can ran the eval scripts first as well. 
 
 # Folders and Files
 The 'Data' folder contains the iris dataset split for training and testing. The 'Models' folder contains the different models for each 'train_classifer'/'train_regression' file. The 'Plots' folder contains the loss graphs and the decision boundary plots. 
